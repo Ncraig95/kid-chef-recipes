@@ -1,1 +1,189 @@
-<!-- index.html placeholder -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kid‑Chef Recipes</title>
+  <!-- Tailwind for rapid prototyping -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#10b981" />
+</head>
+<body class="bg-emerald-50 min-h-screen flex flex-col">
+  <header class="p-4 bg-emerald-600 text-white text-center text-2xl font-bold">
+    Kid‑Chef Recipes 🍳
+  </header>
+
+  <!-- Theme selector -->
+  <div class="p-2 flex justify-center gap-2">
+    <button data-theme="emerald" class="theme-btn rounded-xl px-3 py-1 shadow">Emerald</button>
+    <button data-theme="sky" class="theme-btn rounded-xl px-3 py-1 shadow">Sky</button>
+    <button data-theme="rose" class="theme-btn rounded-xl px-3 py-1 shadow">Rose</button>
+  </div>
+
+  <!-- Recipe list -->
+  <main id="app" class="flex-1 p-4 overflow-y-auto">
+    <section id="uploader" class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer">
+      <p class="text-lg">Drag & drop recipe JSON files here or click to browse.</p>
+      <input type="file" id="fileInput" accept="application/json" multiple class="hidden" />
+    </section>
+    <ul id="recipeList" class="mt-6 space-y-3"></ul>
+  </main>
+
+  <!-- Step viewer -->
+  <div id="stepViewer" class="fixed inset-0 bg-white hidden flex flex-col">
+    <header class="p-4 text-center font-bold text-xl" id="recipeTitle"></header>
+    <div id="stepText" class="flex-1 p-6 text-2xl leading-relaxed"></div>
+    <div class="flex justify-between p-4">
+      <button id="prevBtn" class="px-4 py-2 rounded-lg shadow">⬅️ Back</button>
+      <button id="speakBtn" class="px-4 py-2 rounded-lg shadow">🔈 Read Aloud</button>
+      <button id="nextBtn" class="px-4 py-2 rounded-lg shadow">Next ➡️</button>
+    </div>
+  </div>
+
+  <script>
+    // ---- CONFIG ----
+    const GITHUB_INDEX_URL = "https://raw.githubusercontent.com/USERNAME/REPO/main/recipes/index.json"; // <-- change USERNAME/REPO
+
+    // ---- THEME HANDLER ----
+    const themes = {
+      emerald: {
+        bg: 'bg-emerald-50',
+        header: 'bg-emerald-600'
+      },
+      sky: {
+        bg: 'bg-sky-50',
+        header: 'bg-sky-600'
+      },
+      rose: {
+        bg: 'bg-rose-50',
+        header: 'bg-rose-600'
+      }
+    };
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = themes[btn.dataset.theme];
+        document.body.className = theme.bg + ' min-h-screen flex flex-col';
+        document.querySelector('header').className = 'p-4 text-white text-center text-2xl font-bold ' + theme.header;
+      });
+    });
+
+    // ---- UPLOADER ----
+    const uploader = document.getElementById('uploader');
+    const fileInput = document.getElementById('fileInput');
+    uploader.addEventListener('click', () => fileInput.click());
+    uploader.addEventListener('dragover', e => { e.preventDefault(); uploader.classList.add('bg-emerald-100'); });
+    uploader.addEventListener('dragleave', () => uploader.classList.remove('bg-emerald-100'));
+    uploader.addEventListener('drop', e => {
+      e.preventDefault(); uploader.classList.remove('bg-emerald-100');
+      handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    // ---- GITHUB AUTO‑SYNC ----
+    fetch(GITHUB_INDEX_URL).then(r => r.ok && r.json()).then(index => {
+      if(Array.isArray(index)) index.forEach(loadRecipeFromURL);
+    }).catch(console.warn);
+
+    function loadRecipeFromURL(url){
+      fetch(url).then(r => r.json()).then(addRecipe).catch(console.error);
+    }
+
+    function handleFiles(fileList){
+      [...fileList].forEach(f => {
+        const reader = new FileReader();
+        reader.onload = () => addRecipe(JSON.parse(reader.result));
+        reader.readAsText(f);
+      });
+    }
+
+    // ---- RECIPE STATE ----
+    const recipes = [];
+    const recipeList = document.getElementById('recipeList');
+    function addRecipe(recipe){
+      recipes.push(recipe);
+      const li = document.createElement('li');
+      li.className = 'p-4 bg-white rounded-lg shadow cursor-pointer';
+      li.textContent = recipe.title || 'Untitled';
+      li.addEventListener('click', () => openRecipe(recipe));
+      recipeList.appendChild(li);
+    }
+
+    // ---- STEP VIEWER ----
+    const viewer = document.getElementById('stepViewer');
+    const stepText = document.getElementById('stepText');
+    const recipeTitle = document.getElementById('recipeTitle');
+    let currentStep = 0; let currentRecipe = null; let speaking = false;
+    document.getElementById('prevBtn').onclick = () => showStep(currentStep - 1);
+    document.getElementById('nextBtn').onclick = () => showStep(currentStep + 1);
+    document.getElementById('speakBtn').onclick = () => speakCurrent();
+
+    function openRecipe(recipe){
+      currentRecipe = recipe; currentStep = 0;
+      recipeTitle.textContent = recipe.title;
+      viewer.classList.remove('hidden');
+      showStep(0);
+    }
+
+    function showStep(n){
+      if(!currentRecipe) return;
+      currentStep = Math.max(0, Math.min(n, currentRecipe.steps.length - 1));
+      stepText.textContent = currentRecipe.steps[currentStep];
+    }
+
+    function speakCurrent(){
+      if(speaking){ window.speechSynthesis.cancel(); speaking = false; return; }
+      const utter = new SpeechSynthesisUtterance(stepText.textContent);
+      utter.onend = () => speaking = false;
+      window.speechSynthesis.speak(utter);
+      speaking = true;
+    }
+
+    // ---- SERVICE WORKER ----
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(console.error);
+      });
+    }
+  </script>
+</body>
+</html>
+
+<!-- ---- manifest.webmanifest (save as separate file in same directory) ----
+{
+  "name": "Kid‑Chef Recipes",
+  "short_name": "KidChef",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#10b981",
+  "theme_color": "#10b981",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+---->
+
+<!-- ---- sw.js (save as separate file) ----
+const CACHE_NAME = 'kidchef-v1';
+const CORE_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  'https://cdn.tailwindcss.com'
+];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)));
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(resp => resp || fetch(e.request))
+  );
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k!==CACHE_NAME).map(k => caches.delete(k)))));
+});
+---->
