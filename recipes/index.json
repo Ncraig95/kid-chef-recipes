@@ -1,0 +1,11 @@
+{
+  "recipes": [
+    {
+      "title": "Easy Pizza Dough",
+      "filename": "easy_pizza_dough.json",
+      "theme": "Classic",
+      "unlock": "public",
+      "servings": 4
+    }
+  ]
+}

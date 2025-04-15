@@ -1,0 +1,48 @@
+{
+  "title": "Easy Pizza Dough",
+  "servings": 4,
+  "ingredients": [
+    {
+      "name": "Warm water",
+      "amount": "1 cup",
+      "grams": 240
+    },
+    {
+      "name": "Active dry yeast",
+      "amount": "2\u00bc tsp",
+      "grams": 7
+    },
+    {
+      "name": "Sugar",
+      "amount": "1 Tbsp",
+      "grams": 12
+    },
+    {
+      "name": "All\u2011purpose flour",
+      "amount": "3 cups",
+      "grams": 375
+    },
+    {
+      "name": "Salt",
+      "amount": "1 tsp",
+      "grams": 6
+    },
+    {
+      "name": "Olive oil",
+      "amount": "2 Tbsp",
+      "grams": 30
+    }
+  ],
+  "steps": [
+    "Gather all the ingredients and wash your hands.",
+    "Pour the warm water into the mixer bowl. Sprinkle in the sugar and yeast. Give it a quick stir and let it sit for 5 minutes until it looks foamy.",
+    "Add the flour and salt to the bowl. Attach the dough hook.",
+    "Turn the mixer on low. Drizzle in the olive oil. Let the mixer knead until the dough pulls away from the bowl and looks smooth (about 3\u20134 minutes).",
+    "Lightly flour the counter. Take the dough out and knead it with your hands for 1\u20132 minutes to make it extra smooth.",
+    "Rub a little oil inside a clean bowl. Put the dough in, turn it once so it\u2019s lightly coated, and cover with a towel. Let it rise in a warm spot for about 1 hour, or until it doubles in size.",
+    "Punch the dough down to let the air out. Split it in half (this makes two 12\u2011inch pizzas) or keep it whole for a thick crust.",
+    "Shape, top, and bake your pizza at 475\u202f\u00b0F (245\u202f\u00b0C) for 12\u201315 minutes until golden."
+  ],
+  "theme": "Classic",
+  "unlock": "public"
+}
